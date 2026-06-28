@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: marketlens-api
+
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
