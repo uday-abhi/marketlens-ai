@@ -7,14 +7,29 @@ public class DashboardResponse {
     private int fearGreed;
     private double btcDominance;
 
+    private String bitcoinPrice;
+    private String ethereumPrice;
+    private String solanaPrice;
+
     public DashboardResponse() {
     }
 
-    public DashboardResponse(String marketStatus, int marketHealth, int fearGreed, double btcDominance) {
+    public DashboardResponse(
+            String marketStatus,
+            int marketHealth,
+            int fearGreed,
+            double btcDominance,
+            String bitcoinPrice,
+            String ethereumPrice,
+            String solanaPrice) {
+
         this.marketStatus = marketStatus;
         this.marketHealth = marketHealth;
         this.fearGreed = fearGreed;
         this.btcDominance = btcDominance;
+        this.bitcoinPrice = bitcoinPrice;
+        this.ethereumPrice = ethereumPrice;
+        this.solanaPrice = solanaPrice;
     }
 
     public String getMarketStatus() {
@@ -47,5 +62,29 @@ public class DashboardResponse {
 
     public void setBtcDominance(double btcDominance) {
         this.btcDominance = btcDominance;
+    }
+
+    public String getBitcoinPrice() {
+        return bitcoinPrice;
+    }
+
+    public void setBitcoinPrice(String bitcoinPrice) {
+        this.bitcoinPrice = bitcoinPrice;
+    }
+
+    public String getEthereumPrice() {
+        return ethereumPrice;
+    }
+
+    public void setEthereumPrice(String ethereumPrice) {
+        this.ethereumPrice = ethereumPrice;
+    }
+
+    public String getSolanaPrice() {
+        return solanaPrice;
+    }
+
+    public void setSolanaPrice(String solanaPrice) {
+        this.solanaPrice = solanaPrice;
     }
 }
