@@ -17,14 +17,18 @@ public class DashboardService {
 
     public DashboardResponse getDashboardData() {
 
-        MarketData marketData = marketDataService.getMarketData("BTC");
+        MarketData btc = marketDataService.getMarketData("BTC");
+        MarketData eth = marketDataService.getMarketData("ETH");
+        MarketData sol = marketDataService.getMarketData("SOL");
 
         return new DashboardResponse(
-                marketData.getMarketTrend(),
-                marketData.getMarketHealth(),
-                marketData.getFearGreed(),
-                marketData.getBtcDominance(),
-                marketData.getCurrentPrice()
+                btc.getMarketTrend(),
+                btc.getMarketHealth(),
+                btc.getFearGreed(),
+                btc.getBtcDominance(),
+                btc.getCurrentPrice(),
+                eth.getCurrentPrice(),
+                sol.getCurrentPrice()
         );
     }
 }

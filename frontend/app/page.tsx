@@ -34,11 +34,11 @@ export default function Home() {
           </Link>
 
           <Link
-            href="/learning"
-            className="border border-slate-700 hover:border-blue-500 px-8 py-4 rounded-xl font-semibold transition"
-          >
-            Learn Crypto
-          </Link>
+  href="/coin"
+  className="border border-slate-700 hover:border-blue-500 px-8 py-4 rounded-xl font-semibold transition"
+>
+  Analyze Coin
+</Link>
 
         </div>
 

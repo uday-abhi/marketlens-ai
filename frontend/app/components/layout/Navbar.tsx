@@ -5,7 +5,7 @@ import Link from "next/link";
 export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-slate-800 bg-[#0F172A]">
-      <div className="max-w-7xl mx-auto h-16 px-8 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-8">
 
         <Link
           href="/"
@@ -14,25 +14,40 @@ export default function Navbar() {
           MarketLens AI
         </Link>
 
-        <nav className="flex gap-8">
+        <nav className="flex items-center gap-8 text-sm font-medium">
 
-          <Link href="/" className="text-slate-300 hover:text-white">
+          <Link
+            href="/"
+            className="text-slate-300 hover:text-white transition"
+          >
             Home
           </Link>
 
-          <Link href="/dashboard" className="text-slate-300 hover:text-white">
+          <Link
+            href="/dashboard"
+            className="text-slate-300 hover:text-white transition"
+          >
             Dashboard
           </Link>
 
-          <Link href="/coin" className="text-slate-300 hover:text-white">
+          <Link
+            href="/coin"
+            className="text-slate-300 hover:text-white transition"
+          >
             Coin Analysis
           </Link>
 
-          <Link href="/learning" className="text-slate-300 hover:text-white">
-            Learning Center
+          <Link
+            href="/report"
+            className="text-slate-300 hover:text-white transition"
+          >
+            Market Report
           </Link>
 
-          <Link href="/about" className="text-slate-300 hover:text-white">
+          <Link
+            href="/about"
+            className="text-slate-300 hover:text-white transition"
+          >
             About
           </Link>
 
