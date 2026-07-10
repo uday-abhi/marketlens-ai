@@ -11,9 +11,12 @@
   "dependencies": {
     "framer-motion": "^12.42.0",
     "lucide-react": "^1.21.0",
-    "next": "^16.2.0",
+    "next": "16.2.9",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "react-gauge-component": "^2.0.29",
+    "react-ts-tradingview-widgets": "^1.2.8",
+    "recharts": "^3.9.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

@@ -16,9 +16,14 @@ public class MarketClient {
 
     public BinancePriceResponse getCoinPrice(String symbol) {
 
-        String url = "https://api.binance.com/api/v3/ticker/price?symbol="
-                + symbol.toUpperCase() + "USDT";
+        String url =
+                "https://api.binance.com/api/v3/ticker/24hr?symbol="
+                        + symbol.toUpperCase()
+                        + "USDT";
 
-        return restTemplate.getForObject(url, BinancePriceResponse.class);
+        return restTemplate.getForObject(
+                url,
+                BinancePriceResponse.class
+        );
     }
 }

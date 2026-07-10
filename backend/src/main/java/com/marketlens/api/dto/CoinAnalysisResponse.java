@@ -10,10 +10,27 @@ import lombok.NoArgsConstructor;
 public class CoinAnalysisResponse {
 
     private String symbol;
+
     private String currentPrice;
+
+    private String change24h;
+
+    private String volume;
+
+    private String highPrice;
+
+    private String lowPrice;
+
     private String trend;
-    private int marketHealth;
-    private int confidence;
+
+    private String support;
+
+    private String resistance;
+
+    private String buyerStrength;
+
+    private String sellerStrength;
+
     private String aiSummary;
 
 }

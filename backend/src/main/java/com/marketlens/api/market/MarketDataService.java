@@ -16,15 +16,25 @@ public class MarketDataService {
 
     public MarketData getMarketData(String symbol) {
 
-        BinancePriceResponse coin = marketClient.getCoinPrice(symbol);
+        BinancePriceResponse coin =
+                marketClient.getCoinPrice(symbol);
 
         return new MarketData(
+
                 coin.getSymbol(),
-                coin.getPrice(),
-                "Bullish",
-                82,
-                71,
-                63.5
+
+                coin.getLastPrice(),
+
+                coin.getPriceChangePercent(),
+
+                coin.getVolume(),
+
+                coin.getHighPrice(),
+
+                coin.getLowPrice()
+
         );
+
     }
+
 }
