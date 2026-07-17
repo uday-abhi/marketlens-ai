@@ -7,10 +7,10 @@ import com.marketlens.api.market.MarketData;
 @Service
 public class AIAnalysisService {
 
-    private final GeminiClient geminiClient;
+    private final OpenRouterClient openRouterClient;
 
-    public AIAnalysisService(GeminiClient geminiClient) {
-        this.geminiClient = geminiClient;
+    public AIAnalysisService(OpenRouterClient openRouterClient) {
+        this.openRouterClient = openRouterClient;
     }
 
     public String analyzeCoin(
@@ -101,8 +101,14 @@ Risk Factors
         );
 
         try {
-            return geminiClient.generateContent(prompt);
+
+            return openRouterClient.generateContent(prompt);
+
         } catch (Exception e) {
+
+            System.out.println("\n========== GEMINI ERROR ==========");
+            e.printStackTrace();
+            System.out.println("==================================\n");
 
             return """
 Market Condition
