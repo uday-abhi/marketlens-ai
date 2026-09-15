@@ -1,58 +1,8 @@
-"use client";
+import { TrendingDown, TrendingUp } from "lucide-react";
 
-import { TrendingUp, TrendingDown } from "lucide-react";
+type StatCardProps = { title: string; value: React.ReactNode; change?: number };
 
-type Props = {
-  title: string;
-  value: string;
-  change?: number;
-};
-
-export default function StatCard({
-  title,
-  value,
-  change,
-}: Props) {
-
-  return (
-
-    <div className="bg-slate-900 rounded-xl p-6 hover:bg-slate-800 transition">
-
-      <p className="text-gray-400 text-sm">
-
-        {title}
-
-      </p>
-
-      <h2 className="text-4xl font-bold mt-3">
-
-        {value}
-
-      </h2>
-
-      {change !== undefined && (
-
-        <div
-          className={`flex items-center gap-2 mt-4 font-semibold ${
-            change >= 0
-              ? "text-green-400"
-              : "text-red-400"
-          }`}
-        >
-
-          {change >= 0
-            ? <TrendingUp size={18}/>
-            : <TrendingDown size={18}/>
-          }
-
-          {change.toFixed(2)}%
-
-        </div>
-
-      )}
-
-    </div>
-
-  );
-
+export default function StatCard({ title, value, change }: StatCardProps) {
+  const positive = (change ?? 0) >= 0;
+  return <article className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 transition hover:border-slate-600"><p className="text-sm text-slate-400">{title}</p><p className="mt-3 truncate text-2xl font-bold text-white">{value}</p>{change !== undefined && <p className={`mt-4 flex items-center gap-1.5 text-sm font-semibold ${positive ? "text-emerald-400" : "text-red-400"}`}>{positive ? <TrendingUp size={16} /> : <TrendingDown size={16} />}{positive ? "+" : ""}{change.toFixed(2)}% <span className="font-normal text-slate-500">24h</span></p>}</article>;
 }

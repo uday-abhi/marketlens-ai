@@ -1,101 +1,82 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import FearGreedGauge from "./FearGreedGauge";
+import { Activity } from "lucide-react";
+import { marketApi } from "../../lib/api";
+import type { DashboardOverview as DashboardOverviewData } from "../../types/market";
+import AnimatedNumber from "../ui/AnimatedNumber";
+import LoadingCard from "../ui/LoadingCard";
+import StatusMessage from "../ui/StatusMessage";
+import AnimatedGauge from "../ui/AnimatedGauge";
+import PriceCard from "../ui/PriceCard";
 import BtcDominanceChart from "./BtcDominanceChart";
-import StatCard from "./StatCard"; // Step 2: Added StatCard Import
+import StatCard from "./StatCard";
 
-type DashboardOverviewResponse = {
-  fearGreed: number;
-  fearGreedLabel: string;
-  btcDominance: number;
-  marketCap: string;
-  marketCapChange: number;
-  volume24h: string;
-  volumeChange: number;
-  btcPrice: number;
-  btcChange: number;
-  marketTrend: string;
-};
-
+/**
+ * Dashboard Overview - shows market overview data.
+ *
+ * Data flow:
+ * 1. useEffect runs on mount → calls marketApi.getOverview()
+ * 2. API returns data → setOverview() triggers re-render
+ * 3. Components display the data
+ *
+ * In interviews: "We fetch data in useEffect on component mount.
+ * This is the standard React pattern for data fetching."
+ */
 export default function DashboardOverview() {
-  const [overview, setOverview] = useState<DashboardOverviewResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [overview, setOverview] = useState<DashboardOverviewData | null>(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/dashboard/overview")
-      .then((res) => {
-        if (!res.ok) throw new Error("Network response error");
-        return res.json();
-      })
-      .then((data) => {
-        setOverview(data);
-      })
-      .catch((err) => console.error("Error fetching overview data:", err))
-      .finally(() => setLoading(false));
+    marketApi.getOverview()
+      .then(setOverview)
+      .catch((requestError: Error) => setError(requestError.message));
   }, []);
 
-  if (loading) {
-    return <div className="text-white text-lg animate-pulse p-8">Loading...</div>;
-  }
+  if (error) return <StatusMessage variant="error">{error}</StatusMessage>;
 
   if (!overview) {
-    return <div className="text-red-500 font-semibold p-8">Unable to load overview.</div>;
+    return (
+      <section className="grid gap-4 md:grid-cols-2">
+        <LoadingCard className="h-72" />
+        <LoadingCard className="h-72" />
+        <LoadingCard className="h-40" />
+        <LoadingCard className="h-40" />
+      </section>
+    );
   }
 
   return (
-    <div className="bg-[#111827] border border-gray-800 rounded-2xl p-8">
-      <h2 className="text-2xl font-bold mb-8">
-        Market Overview
-      </h2>
-
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Visual Analytics Widgets */}
-        <FearGreedGauge value={overview.fearGreed} label={overview.fearGreedLabel} />
-        <BtcDominanceChart dominance={overview.btcDominance} />
-
-        {/* Step 3: Replaced with modular BTC Price StatCard */}
-        <StatCard
-          title="BTC Price"
-          value={`$${overview.btcPrice.toLocaleString()}`}
-          change={overview.btcChange}
-        />
-
-        {/* Step 4: Replaced with modular Market Cap StatCard */}
-        <StatCard
-          title="Market Cap"
-          value={overview.marketCap}
-          change={overview.marketCapChange}
-        />
-
-        {/* Step 5: Replaced with modular 24H Volume StatCard */}
-        <StatCard
-          title="24H Volume"
-          value={overview.volume24h}
-          change={overview.volumeChange}
-        />
-
-        {/* Step 6: Refactored Market Trend Display Box */}
-        <div className="bg-slate-900 rounded-xl p-6">
-          <p className="text-gray-400">
-            Market Trend
-          </p>
-          <div className="mt-6">
-            <span
-              className={`px-6 py-3 rounded-full text-xl font-bold ${
-                overview.marketTrend.includes("Bull")
-                  ? "bg-green-500/20 text-green-400"
-                  : overview.marketTrend.includes("Bear")
-                  ? "bg-red-500/20 text-red-400"
-                  : "bg-yellow-500/20 text-yellow-400"
-              }`}
-            >
-              {overview.marketTrend}
-            </span>
-          </div>
-        </div>
-
+    <section className="space-y-6">
+      <div className="flex items-center gap-2">
+        <Activity size={18} className="text-blue-400" />
+        <h2 className="text-xl font-bold text-white">Market Overview</h2>
+        <span className="text-sm text-slate-500">Live data</span>
       </div>
-    </div>
+
+      {/* Top row: Fear & Greed + BTC Price */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <AnimatedGauge value={overview.fearGreed} label={overview.fearGreedLabel} />
+        <PriceCard price={overview.btcPrice} change={overview.btcChange} label="Bitcoin Price" />
+      </div>
+
+      {/* Middle row: Dominance + Market stats */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <BtcDominanceChart dominance={overview.btcDominance} />
+        <div className="space-y-3">
+          <StatCard title="Total Market Cap" value={overview.marketCap} change={overview.marketCapChange} />
+          <StatCard title="24h Volume" value={overview.volume24h} change={overview.volumeChange} />
+        </div>
+      </div>
+
+      {/* Bottom: Market Trend */}
+      <div className="rounded-2xl border border-slate-700 bg-gradient-to-br from-slate-900 to-slate-800 p-6">
+        <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Market Trend</h3>
+        <p className="mt-3 text-3xl font-bold text-white">{overview.marketTrend}</p>
+        <p className="mt-1 text-sm text-slate-400">
+          {overview.btcChange >= 0 ? "📈 Bullish" : "📉 Bearish"} - BTC {overview.btcChange >= 0 ? "+" : ""}{overview.btcChange.toFixed(2)}%
+        </p>
+      </div>
+    </section>
   );
 }

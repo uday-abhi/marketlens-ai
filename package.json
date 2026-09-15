@@ -1,5 +1,17 @@
 {
-  "dependencies": {
-    "react-ts-tradingview-widgets": "^1.2.8"
+  "name": "marketlens-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MarketLens AI - full-stack crypto market intelligence.",
+  "scripts": {
+    "install:all": "npm --prefix frontend install",
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "lint": "npm --prefix frontend run lint",
+    "backend": "cd backend && .\\mvnw.cmd spring-boot:run",
+    "backend:test": "cd backend && .\\mvnw.cmd test"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

@@ -1,6 +1,17 @@
+# Internal documentation (not for resume portfolio)
+CLAUDE.md
+SETUP_GUIDE.md
+PROJECT_COMPLETE.md
+frontend/AGENTS.md
+
+# IDE / Build / Env
 .idea/
 .vscode/
 node_modules/
 target/
 .env
+.env.local
 *.log
+.next/
+out/
+.DS_Store

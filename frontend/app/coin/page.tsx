@@ -1,284 +1,236 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
-import dynamic from "next/dynamic";
+import { BrainCircuit, CandlestickChart, Search } from "lucide-react";
+import { FormEvent, useEffect, useState } from "react";
+import { marketApi } from "../lib/api";
+import type { CoinAnalysis } from "../types/market";
+import AnimatedNumber from "../components/ui/AnimatedNumber";
+import LoadingCard from "../components/ui/LoadingCard";
+import StatusMessage from "../components/ui/StatusMessage";
 
-// Dynamically import the widget with SSR disabled to prevent development build freezes
-const AdvancedRealTimeChart = dynamic(
-  () => import("react-ts-tradingview-widgets").then((mod) => mod.AdvancedRealTimeChart),
-  { ssr: false }
-);
+/**
+ * Coin Analysis Page - search and analyze any coin.
+ * 
+ * Features:
+ * - Search any Binance USDT pair
+ * - Shows live market data (price, change, volume, etc.)
+ * - Optional AI analysis on demand
+ * 
+ * State management:
+ * - symbol: what user types in input
+ * - selectedSymbol: what was actually searched
+ * - coin: the fetched data
+ * - loading/aiLoading: loading states
+ * - error: error messages
+ * 
+ * In interviews: "We use multiple useState hooks for different concerns.
+ * This keeps state updates predictable and easy to debug."
+ */
+const quickSymbols = ["BTC", "ETH", "SOL", "BNB", "XRP"];
 
-type CoinResponse = {
-  symbol: string;
-  currentPrice: string;
-  change24h: string;
-  volume: string;
-  highPrice: string;
-  lowPrice: string;
-  trend: string;
-  support: string;
-  resistance: string;
-  buyerStrength: string;
-  sellerStrength: string;
-  aiSummary: string;
-};
+function formatNumber(value: string) {
+  return Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
 
 export default function CoinPage() {
   const [symbol, setSymbol] = useState("BTC");
-  const [coin, setCoin] = useState<CoinResponse | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [selectedSymbol, setSelectedSymbol] = useState("BTC");
+  const [coin, setCoin] = useState<CoinAnalysis | null>(null);
+  const [loading, setLoading] = useState(true);
   const [aiLoading, setAiLoading] = useState(false);
-  const activeSymbolRef = useRef("BTC");
+  const [error, setError] = useState("");
 
-  // Xử lý gọi phân tích dữ liệu từ API
-  const analyzeCoin = useCallback(async (coinSymbol?: string) => {
-    const search = (coinSymbol || symbol).trim().toUpperCase();
+  // Load initial coin (BTC) on mount
+  useEffect(() => {
+    marketApi
+      .getCoin("BTC")
+      .then(setCoin)
+      .catch((requestError: Error) => setError(requestError.message))
+      .finally(() => setLoading(false));
+  }, []);
 
-    if (coinSymbol) {
-      setSymbol(coinSymbol);
+  // Load coin data (without AI)
+  async function loadCoin(nextSymbol = symbol) {
+    const cleanSymbol = nextSymbol.trim().replace("USDT", "").toUpperCase();
+
+    if (!cleanSymbol) {
+      setError("Enter a coin symbol such as BTC or ETH.");
+      return;
     }
-    
-    activeSymbolRef.current = search;
+
+    setSymbol(cleanSymbol);
+    setSelectedSymbol(cleanSymbol);
     setLoading(true);
+    setError("");
 
     try {
-      const res = await fetch(`http://localhost:8080/api/coin/${search}`);
-      
-      if (!res.ok) {
-        throw new Error("Failed to fetch coin analysis");
-      }
-
-      const data = await res.json();
-      
-      // Chống race condition
-      if (activeSymbolRef.current === search) {
-        setCoin({ ...data, aiSummary: "" });
-      }
-    } catch (e) {
-      console.error(e);
-      alert(`Unable to fetch coin: ${search}`);
+      const response = await marketApi.getCoin(cleanSymbol);
+      setCoin(response);
+    } catch (requestError) {
+      setCoin(null);
+      setError(requestError instanceof Error ? requestError.message : "Unable to load this coin.");
     } finally {
-      if (activeSymbolRef.current === search) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
-  }, [symbol]);
+  }
 
-  const analyzeWithAI = async () => {
+  // Load coin data WITH AI analysis
+  async function analyzeWithAI() {
     if (!coin) return;
 
     setAiLoading(true);
+    setError("");
 
     try {
-      const res = await fetch(
-        `http://localhost:8080/api/coin/${coin.symbol.replace("USDT", "")}/analyze`,
-        {
-          method: "POST",
-        }
-      );
-
-      if (!res.ok) {
-        throw new Error("AI analysis failed");
-      }
-
-      const data = await res.json();
-      
-      setCoin((previous) => {
-        if (!previous) return previous;
-
-        return {
-          ...previous,
-          aiSummary: data.aiSummary,
-        };
-      });
-    } catch (e) {
-      console.error(e);
-      alert("Unable to generate AI analysis.");
+      const response = await marketApi.analyzeCoin(selectedSymbol);
+      setCoin(response);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Unable to generate analysis.");
     } finally {
       setAiLoading(false);
     }
-  };
+  }
 
-  // FIX 1: Run only once when the page loads so typing doesn't reset input to BTC
-  useEffect(() => {
-    analyzeCoin("BTC");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    loadCoin();
+  }
+
+  const change = Number(coin?.change24h ?? 0);
+  const isPositive = change >= 0;
 
   return (
-    <main className="min-h-screen bg-[#0F172A] text-white px-10 py-10">
-      
-      {/* Heading */}
-      <h1 className="text-5xl font-extrabold mb-10 tracking-tight">
-        Coin Analysis
-      </h1>
+    <main className="mx-auto min-h-screen max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+      <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 sm:p-8">
+        <p className="flex items-center gap-2 text-sm font-semibold text-blue-400">
+          <CandlestickChart size={17} /> COIN ANALYSIS
+        </p>
+        <h1 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+          Make sense of a market in minutes.
+        </h1>
+        <p className="mt-2 max-w-2xl text-slate-400">
+          Search any Binance USDT ticker for live technical context and an optional AI explanation.
+        </p>
 
-      {/* Input & Search Button */}
-      <div className="flex gap-4 mb-8">
-        <input
-          value={symbol}
-          onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              analyzeCoin();
-            }
-          }}
-          placeholder="Enter Coin Symbol"
-          className="bg-slate-800 border border-slate-700 rounded-lg px-5 py-3 w-80 outline-none focus:border-blue-500"
-        />
-
-        <button
-          onClick={() => analyzeCoin()}
-          disabled={loading}
-          className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 px-8 py-3 rounded-lg font-semibold transition"
-        >
-          {loading ? "Loading..." : "Analyze"}
-        </button>
-      </div>
-
-      {/* Quick Select Buttons */}
-      <div className="flex flex-wrap gap-3 mb-10">
-        {["BTC", "ETH", "SOL", "BNB", "XRP"].map((item) => (
-          <button
-            key={item}
-            onClick={() => analyzeCoin(item)}
-            className={`px-5 py-2 rounded-lg transition ${
-              activeSymbolRef.current === item
-                ? "bg-blue-600"
-                : "bg-slate-800 hover:bg-slate-700"
-            }`}
-          >
-            {item}
+        <form onSubmit={submit} className="mt-6 flex flex-col gap-3 sm:flex-row">
+          <label className="sr-only" htmlFor="coin-symbol">Coin symbol</label>
+          <div className="relative max-w-md flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+            <input
+              id="coin-symbol"
+              value={symbol}
+              onChange={(event) => setSymbol(event.target.value.toUpperCase())}
+              placeholder="BTC"
+              className="w-full rounded-xl border border-slate-700 bg-[#0b1525] py-3 pl-10 pr-4 text-white outline-none transition placeholder:text-slate-600 focus:border-blue-500"
+            />
+          </div>
+          <button disabled={loading} className="rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-slate-700">
+            {loading ? "Loading..." : "Analyze coin"}
           </button>
-        ))}
-      </div>
+        </form>
 
-      {/* Live Chart Section - react-ts-tradingview-widgets */}
-      <div className="bg-slate-800 rounded-xl p-4 mb-10">
-        <h2 className="text-2xl font-bold mb-4">
-          Live TradingView Chart
-        </h2>
-        <div className="w-full h-[600px]">
-          <AdvancedRealTimeChart
-            theme="dark"
-            symbol={`BINANCE:${symbol}USDT`}
-            autosize
-          />
+        <div className="mt-4 flex flex-wrap gap-2">
+          {quickSymbols.map((item) => (
+            <button
+              key={item}
+              onClick={() => loadCoin(item)}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                selectedSymbol === item ? "bg-blue-500/20 text-blue-300" : "bg-slate-800 text-slate-400 hover:text-white"
+              }`}
+            >
+              {item}
+            </button>
+          ))}
         </div>
-      </div>
+      </section>
+
+      {error && <div className="mt-5"><StatusMessage variant="error">{error}</StatusMessage></div>}
 
       {loading && (
-        <p className="text-xl mb-8 animate-pulse">
-          Loading technical data...
-        </p>
+        <section className="mt-6 grid gap-4 md:grid-cols-3">
+          <LoadingCard className="h-32" />
+          <LoadingCard className="h-32" />
+          <LoadingCard className="h-32" />
+        </section>
       )}
 
-      {/* Data Presentation */}
       {coin && !loading && (
-        <>
-          <div className="grid lg:grid-cols-3 gap-6 mb-10">
-            <div className="bg-slate-800 rounded-xl p-6">
-              <h3 className="text-slate-400 mb-2">Current Price</h3>
-              <p className="text-3xl font-bold">
-                ${Number(coin.currentPrice).toLocaleString()}
-              </p>
-            </div>
-
-            <div className="bg-slate-800 rounded-xl p-6">
-              <h3 className="text-slate-400 mb-2">24H Change</h3>
-              <p
-                className={`text-3xl font-bold ${
-                  Number(coin.change24h) >= 0
-                    ? "text-green-400"
-                    : "text-red-400"
-                }`}
-              >
-                {coin.change24h}%
-              </p>
-            </div>
-
-            <div className="bg-slate-800 rounded-xl p-6">
-              <h3 className="text-slate-400 mb-2">Trend</h3>
-              <p
-                className={`text-3xl font-bold ${
-                  (coin.trend ?? "").includes("Bull")
-                    ? "text-green-400"
-                    : (coin.trend ?? "").includes("Bear")
-                    ? "text-red-400"
-                    : "text-yellow-400"
-                }`}
-              >
-                {coin.trend ?? "Unknown"}
-              </p>
-            </div>
-          </div>
-
-          <div className="grid xl:grid-cols-2 gap-8 mb-10">
-            {/* Technical Metrics Summary */}
-            <div className="bg-slate-800 rounded-xl p-6">
-              <h2 className="text-2xl font-bold mb-6">Technical Metrics</h2>
-              <div className="space-y-4">
-                <p><strong>Symbol:</strong> {coin.symbol}</p>
-                <p>
-                  <strong>24H High / Low:</strong> ${Number(coin.highPrice).toLocaleString()} / ${Number(coin.lowPrice).toLocaleString()}
-                </p>
-                <p><strong>Volume:</strong> {Number(coin.volume).toLocaleString()}</p>
-                <p><strong>Support Level:</strong> ${Number(coin.support).toLocaleString()}</p>
-                <p><strong>Resistance Level:</strong> ${Number(coin.resistance).toLocaleString()}</p>
-                <p><strong>Buyer Strength:</strong> {coin.buyerStrength}</p>
-                <p><strong>Seller Strength:</strong> {coin.sellerStrength}</p>
-              </div>
-            </div>
-
-            {/* AI Report Summary */}
-            <div className="bg-slate-800 rounded-xl p-6">
-              <h2 className="text-2xl font-bold mb-6">AI Market Summary</h2>
-              <div className="space-y-5">
-                <div className="flex items-center gap-3">
-                  <span className={coin?.trend?.includes("Bull") ? "text-green-400" : "text-red-400"}>●</span>
-                  <span className="font-semibold">Trend</span>
-                  <span className={`ml-auto font-bold ${coin?.trend?.includes("Bull") ? "text-green-400" : "text-red-400"}`}>
-                    {coin.trend}
-                  </span>
-                </div>
-
-                <div className="border-t border-slate-700"></div>
-
-                <button
-                  onClick={analyzeWithAI}
-                  disabled={aiLoading}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 px-5 py-2 rounded-lg font-semibold mb-6"
-                >
-                  {aiLoading ? "Generating..." : "Analyze with AI"}
-                </button>
-
-                <div className="whitespace-pre-line leading-8 text-gray-300">
-                  {coin.aiSummary || "Click 'Analyze with AI' to generate a detailed AI explanation."}
-                </div>
-
-                <div className="border-t border-slate-700 pt-5">
-                  <div className="grid grid-cols-2 gap-5">
-                    <div>
-                      <p className="text-slate-400">Buyer Strength</p>
-                      <p className={`font-bold ${coin?.buyerStrength?.includes("Strong") ? "text-green-400" : "text-yellow-400"}`}>
-                        {coin.buyerStrength}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-slate-400">Seller Strength</p>
-                      <p className={`font-bold ${coin?.sellerStrength?.includes("Strong") ? "text-red-400" : "text-green-400"}`}>
-                        {coin.sellerStrength}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </>
+        <CoinDetails coin={coin} change={change} isPositive={isPositive} aiLoading={aiLoading} onAnalyze={analyzeWithAI} />
       )}
     </main>
+  );
+}
+
+type CoinDetailsProps = {
+  coin: CoinAnalysis;
+  change: number;
+  isPositive: boolean;
+  aiLoading: boolean;
+  onAnalyze: () => void;
+};
+
+function CoinDetails({ coin, change, isPositive, aiLoading, onAnalyze }: CoinDetailsProps) {
+  const trendTone = coin.trend.includes("Bull") ? "positive" : coin.trend.includes("Bear") ? "negative" : "neutral";
+  const technicalData = [
+    ["24h high", `$${formatNumber(coin.highPrice)}`],
+    ["24h low", `$${formatNumber(coin.lowPrice)}`],
+    ["24h volume", formatNumber(coin.volume)],
+    ["Support", `$${formatNumber(coin.support)}`],
+    ["Resistance", `$${formatNumber(coin.resistance)}`],
+    ["Buyer strength", coin.buyerStrength],
+    ["Seller strength", coin.sellerStrength],
+  ];
+
+  return (
+    <>
+      <section className="mt-6 grid gap-4 md:grid-cols-3">
+        <Metric label="Current price" value={<AnimatedNumber value={Number(coin.currentPrice)} decimals={2} prefix="$" className="tabular-nums" />} />
+        <Metric label="24h change" value={`${isPositive ? "+" : ""}${change.toFixed(2)}%`} tone={isPositive ? "positive" : "negative"} />
+        <Metric label="Market trend" value={coin.trend} tone={trendTone} />
+      </section>
+      <section className="mt-6 grid gap-6 xl:grid-cols-[.9fr_1.1fr]">
+        <article className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          <h2 className="text-xl font-bold text-white">Technical snapshot</h2>
+          <dl className="mt-5 divide-y divide-slate-800">
+            {technicalData.map(([label, value]) => (
+              <div key={label} className="flex items-center justify-between gap-4 py-3 text-sm">
+                <dt className="text-slate-400">{label}</dt>
+                <dd className="text-right font-semibold text-slate-200">{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </article>
+        <article className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="flex items-center gap-2 text-sm font-semibold text-violet-300">
+                <BrainCircuit size={17} /> AI MARKET SUMMARY
+              </p>
+              <h2 className="mt-2 text-xl font-bold text-white">Read the setup in plain language</h2>
+            </div>
+            <button
+              onClick={onAnalyze}
+              disabled={aiLoading}
+              className="rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-500 disabled:bg-slate-700"
+            >
+              {aiLoading ? "Generating..." : coin.aiSummary ? "Refresh analysis" : "Analyze with AI"}
+            </button>
+          </div>
+          <div className="mt-5 min-h-52 whitespace-pre-wrap rounded-xl border border-slate-800 bg-[#0b1525] p-5 text-sm leading-7 text-slate-300">
+            {coin.aiSummary || "Generate an AI explanation to connect the trend, price movement, key levels, and risk factors."}
+          </div>
+        </article>
+      </section>
+    </>
+  );
+}
+
+function Metric({ label, value, tone = "neutral" }: { label: string; value: React.ReactNode; tone?: "positive" | "negative" | "neutral" }) {
+  const color = tone === "positive" ? "text-emerald-400" : tone === "negative" ? "text-red-400" : "text-white";
+  return (
+    <article className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+      <p className="text-sm text-slate-400">{label}</p>
+      <p className={`mt-2 truncate text-2xl font-bold ${color}`}>{value}</p>
+    </article>
   );
 }

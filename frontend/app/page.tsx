@@ -1,9 +1,15 @@
+import CTA from "./components/home/CTA";
+import Features from "./components/home/Features";
 import Hero from "./components/home/Hero";
+import HowItWorks from "./components/home/HowItWorks";
 
 export default function Home() {
   return (
-    <main className="px-8 lg:px-20">
+    <main>
       <Hero />
+      <Features />
+      <HowItWorks />
+      <CTA />
     </main>
   );
 }

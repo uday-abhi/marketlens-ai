@@ -7,27 +7,34 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.marketlens.api.dto.CoinAnalysisResponse;
-import com.marketlens.api.service.CoinAnalysisService;
+import com.marketlens.api.service.MarketService;
 
+/**
+ * Coin Analysis Controller - handles individual coin data and AI analysis.
+ * 
+ * Endpoints:
+ * - GET /api/coin/{symbol}     -> Returns market data only
+ * - POST /api/coin/{symbol}/analyze -> Returns market data + AI analysis
+ */
 @RestController
 @RequestMapping("/api/coin")
 public class CoinAnalysisController {
 
-    private final CoinAnalysisService coinAnalysisService;
+    private final MarketService marketService;
 
-    public CoinAnalysisController(CoinAnalysisService coinAnalysisService) {
-        this.coinAnalysisService = coinAnalysisService;
+    public CoinAnalysisController(MarketService marketService) {
+        this.marketService = marketService;
     }
 
     // Market data only (no AI)
     @GetMapping("/{symbol}")
     public CoinAnalysisResponse getCoin(@PathVariable String symbol) {
-        return coinAnalysisService.getCoinData(symbol);
+        return marketService.getCoinData(symbol);
     }
 
     // AI analysis
     @PostMapping("/{symbol}/analyze")
     public CoinAnalysisResponse analyzeCoin(@PathVariable String symbol) {
-        return coinAnalysisService.analyzeCoin(symbol);
+        return marketService.analyzeCoin(symbol);
     }
 }

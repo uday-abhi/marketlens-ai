@@ -1,0 +1,21 @@
+services:
+  backend:
+    build: ./backend
+    container_name: marketlens-backend
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+    ports:
+      - "9090:9090"
+
+  frontend:
+    build: ./frontend
+    container_name: marketlens-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:9090
+    ports:
+      - "3000:3000"
